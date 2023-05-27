@@ -45,6 +45,23 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Azure App Settings
+      uses: Azure/appservice-settings@v1
+      with:
+        app-name: appsightnet-servicehealth
+        app-settings-json: |
+          [
+            {
+              "name": "HealthChecksUI__Webhooks__0__Uri",
+              "value": "${{ secrets.DISCORD_WEBHOOK_ENDPOINT }}"
+            }
+          ]
+          
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
       uses: azure/webapps-deploy@v2
