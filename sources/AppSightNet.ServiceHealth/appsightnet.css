@@ -1,0 +1,7 @@
+:root {
+    --logoImageUrl: url('https://appsight.net/static/images/apple-touch-icon.200x200.png');
+}
+
+.hc-aside__logo {
+    background-color: transparent;
+}

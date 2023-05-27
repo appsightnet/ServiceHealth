@@ -84,6 +84,9 @@ app.MapGet(
     }
 );
 
-app.UseRouting().UseEndpoints(config => config.MapHealthChecksUI());
+app.UseRouting()
+    .UseEndpoints(
+        config => config.MapHealthChecksUI(setup => setup.AddCustomStylesheet("appsightnet.css"))
+    );
 
 app.Run();
