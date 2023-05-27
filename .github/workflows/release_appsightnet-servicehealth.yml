@@ -7,6 +7,9 @@ on:
   push:
     branches:
       - release
+    paths:
+    - 'sources/AppSightNet.ServiceHealth/**'
+    - '.github/workflows/release_appsightnet-servicehealth.yml'
   workflow_dispatch:
 
 jobs:
@@ -31,7 +34,8 @@ jobs:
       with:
         push: true
         tags: appsightnet.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_e006205c824140e1b0ec767bf01adb74 }}/servicehealth:${{ github.sha }}
-        file: ./Dockerfile
+        file: ./sources/AppSightNet.ServiceHealth/Dockerfile
+        context: ./sources/
 
   deploy:
     runs-on: ubuntu-latest
