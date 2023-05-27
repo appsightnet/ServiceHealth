@@ -1,32 +1,89 @@
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add healthchecks to the container.
+
+builder.Services
+    .AddOptions<HealthChecksUrlGroupOptions>()
+    .Bind(builder.Configuration.GetSection("HealthChecksUrlGroupOptions"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+var urlGroupOptions = builder.Configuration
+    .GetSection("HealthChecksUrlGroupOptions")
+    .Get<HealthChecksUrlGroupOptions>();
+
+var healthChecksBuilder = builder.Services.AddHealthChecks();
+
+foreach (var urlGroup in urlGroupOptions.UrlGroups)
+{
+    healthChecksBuilder.AddUrlGroup(
+        uris: urlGroup.Urls,
+        httpMethod: urlGroup.HttpMethod,
+        name: urlGroup.Name,
+        failureStatus: urlGroup.FailureStatus,
+        tags: urlGroup.Tags
+    );
+}
+
+// Add other services to the container.
+
+builder.Services.AddHealthChecksUI().AddInMemoryStorage();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.MapHealthChecks(
+    "/minigames/healthz/liveness",
+    new HealthCheckOptions
+    {
+        Predicate = healthCheck =>
+            healthCheck.Tags.Contains("minigames") && healthCheck.Tags.Contains("liveness"),
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+    }
+);
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateTime.Now.AddDays(index),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-});
+app.MapHealthChecks(
+    "/webapps/healthz/liveness",
+    new HealthCheckOptions
+    {
+        Predicate = healthCheck =>
+            healthCheck.Tags.Contains("webapps") && healthCheck.Tags.Contains("liveness"),
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+    }
+);
+
+app.MapHealthChecks(
+    "/webapps/healthz/readiness",
+    new HealthCheckOptions
+    {
+        Predicate = healthCheck =>
+            healthCheck.Tags.Contains("webapps") && healthCheck.Tags.Contains("readiness"),
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+    }
+);
+
+app.MapHealthChecks(
+    "/websites/healthz/liveness",
+    new HealthCheckOptions
+    {
+        Predicate = healthCheck =>
+            healthCheck.Tags.Contains("websites") && healthCheck.Tags.Contains("liveness"),
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+    }
+);
+
+app.MapGet(
+    "/",
+    () =>
+    {
+        return "alive!";
+    }
+);
+
+app.UseRouting().UseEndpoints(config => config.MapHealthChecksUI());
 
 app.Run();
-
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
